@@ -1,149 +1,146 @@
-let mongoose = require('mongoose')
 let express = require('express')
 let router = express.Router()
 let Cart = require('../models/CartSchema')
-let Menu = require('../models/menuSchema')
+const { cookieAuth } = require('../auth/middleware')
+const Book = require('../models/BookSchema')
 
-// 1- to add menu food to category
-router.post('/:userId', async(req, resp)=>{
-    try{
-        let{userId} = req.params
-        let{menu, qty} = req.body
-        let cart = await Cart.findOne({user:userId})
-        if(!cart){
-            cart = new Cart({
-                user:userId,
-                items:[{menu:menu, qty:qty || 1}]
-            })
+// Add to cart
+router.post('/addToCart', cookieAuth(), async (req, resp) => {
+    try {
+        let cart = await Cart.findOne({ user: req.user.id })
+        if (!cart) {
+            cart = new Cart({ user: req.user.id, items: [] })
+            await cart.save()
         }
-        else {
-            //check if item in the cart
-            //i.menu from mongodb can't be compared with menu that is string
-            let itemIndex = cart.items.findIndex((i)=>i.menu.toString() === menu)
-            if(itemIndex > -1){
-                cart.items[itemIndex].qty += qty;
-            } else {
-                cart.items.push({ menu, qty });
-            }
 
-            // cart.items = cart.items.reduce((acc, item) => {
-            //     let existing = acc.find(i => i.menu.toString() === item.menu.toString());
-            //     if(existing){
-            //         existing.qty = item.qty; 
-            //     } else {
-            //         acc.push(item);
-            //     }
-            //     return acc;
-            // }, []);
-                    
-         
-    }
+        let { bookId } = req.body
+        if (!bookId) {
+            return resp.status(400).json({ status: 'error', message: 'Book ID is required' })
+        }
+
+        let book = await Book.findById(bookId)
+        if (!book) {
+            return resp.status(404).json({ status: 'error', message: 'Book not found' })
+        }
+
+        if (book.stock <= 0) {
+            return resp.status(405).json({ status: 'error', message: 'Out of stock' })
+        }
+
+        let itemIndex = cart.items.findIndex(item => item.book.toString() === bookId)
+        if (itemIndex > -1) {
+            cart.items[itemIndex].quantity += 1
+        } else {
+            cart.items.push({ book: bookId, price: book.price, quantity: 1 })
+        }
+
+        book.stock -= 1
+        await book.save()
         await cart.save()
-        resp.status(200).json({status:'success', data:cart})
-    }
-    catch(error){
-        resp.status(400).json({status:'error', data:error})
+        await cart.populate('items.book')
+
+        resp.status(200).json({ status: 'success', data: cart })
+    } catch (error) {
+        resp.status(500).json({ status: 'error', message: error.message })
     }
 })
 
-// 2- to get items in cart
-router.get('/:userId', async(req, resp)=>{
-    try{
-        let {userId} = req.params
-        let cart = await Cart.findOne({user:userId}).populate('items.menu')
-        //populate is only working for objectId refernce which is menu Id
-        if(!cart){
-        return resp.status(400).json({status:'fail', data:{items:[], qty:0}})
+// Get cart
+router.get('/', cookieAuth(), async (req, resp) => {
+    try {
+        let cart = await Cart.findOne({ user: req.user.id })
+         .populate({
+        path: 'items.book',
+        populate: {
+          path: 'category',
+          select: 'name' 
         }
-        let total = 0
-        await cart.populate('items.menu')
-        cart.items.forEach((i)=>{
-            total +=i.menu.price * i.qty //the price of items in menu food
-        })
-
-        resp.status(200).json({status:'success', data:{cart, total}})
-    }
-    catch(error){
-        resp.status(400).json({status:'error', data:error})
+      });
+        if (!cart) {
+            cart = new Cart({ user: req.user.id, items: [] })
+            await cart.save()
+        }
+        resp.status(200).json({ status: 'success', data: cart })
+    } catch (error) {
+        resp.status(500).json({ status: 'error', message: error.message })
     }
 })
 
-// 3- to update and modify
-router.patch('/updateCart', async(req, resp)=>{
-    try{
-        let{userId, menu, qty} = req.body
-        let cart = await Cart.findOne({user:userId})
-        if(!cart){
-            return resp.status(400).json({status:'fail', data:'Cart not found'})
+// Update cart
+// Update cart
+router.patch('/update', cookieAuth(), async (req, resp) => {
+    try {
+        let { bookId, quantity } = req.body
+        let cart = await Cart.findOne({ user: req.user.id }).populate('items.book')
+        if (!cart) {
+            return resp.status(404).json({ status: 'fail', data: 'Cart not found' })
         }
-        let itemIndex = cart.items.findIndex((i)=>i.menu.toString() === menu)
-            if(itemIndex > -1){
-                if(qty > 0){
-                    cart.items[itemIndex].qty = qty
-                }
-                else{
-                    cart.items.splice(itemIndex,1)
-                }
-                
-                await cart.save()
-                let total = 0
-                await cart.populate('items.menu')
-                cart.items.forEach((i)=>{
-                    total +=i.menu.price * i.qty
-                })
-                resp.status(200).json({status:'success', data:{cart, total}})
+
+        let item = cart.items.find(it => it.book._id.toString() === bookId)
+        if (!item) {
+            return resp.status(404).json({ status: 'fail', data: 'Item not found in cart' })
+        }
+
+        let book = await Book.findById(bookId)
+        if (!book) {
+            return resp.status(404).json({ status: 'fail', data: 'Book not found' })
+        }
+
+        // فرق الكمية الجديدة والقديمة
+        let difference = quantity - item.quantity
+
+        if (difference > 0) {
+            // بيزود في الكمية
+            if (book.stock < difference) {
+                return resp.status(400).json({ status: 'fail', data: 'Not enough stock' })
             }
-            else{
-                return resp.status(404).json({status:'fail', data:'item not found on cart'})
-            }
-        
-    }
-    catch(error){
-        resp.status(400).json({status:'error', data:error})
+            book.stock -= difference
+        } else if (difference < 0) {
+            // بيقلل في الكمية
+            book.stock += Math.abs(difference)
+        }
+
+        // تحديث الكمية في الكارت
+        item.quantity = quantity
+
+        await book.save()
+        await cart.save()
+
+        resp.status(200).json({ status: 'success', data: cart })
+    } catch (error) {
+        resp.status(500).json({ status: 'error', message: error.message })
     }
 })
 
-//4- to delete item from cart
-router.delete('/remove', async(req, resp)=>{
-    try{
-        let{userId, menu} = req.body
-        let cart = await Cart.findOne({user:userId})
-        if(!cart){
-            return resp.status(404).json({ status:'fail', data:'Cart not found' });
+
+// Remove from cart
+router.delete('/remove/:bookId', cookieAuth(), async (req, resp) => {
+    try {
+        let {bookId} = req.params
+        let cart = await Cart.findOne({ user: req.user.id }).populate('items.book')
+        if (!cart) {
+            return resp.status(404).json({ status: 'fail', data: 'Cart not found' })
         }
-        cart.items = cart.items.filter((i)=>i.menu.toString() !== menu)
+
+        let itemIndex = cart.items.findIndex(it => it.book._id.toString() === bookId)
+        if (itemIndex === -1) {
+            return resp.status(404).json({ status: 'fail', data: 'Item not found in cart' })
+        }
+
+        let item = cart.items[itemIndex]
+        let book = await Book.findById(bookId)
+        if (book) {
+            book.stock += item.quantity
+            await book.save()
+        }
+
+        cart.items.splice(itemIndex, 1)
         await cart.save()
-        let total = 0
-        await cart.populate('items.menu')
-        cart.items.forEach((i)=>{
-            total += i.menu.price * i.qty
-        })
-        resp.status(200).json({status:'success', data:{cart, total}})
 
+        resp.status(200).json({ status: 'success', data: cart })
+    } catch (error) {
+        resp.status(500).json({ status: 'error', message: error.message })
     }
-      catch(error){
-        resp.status(400).json({status:'error', data:error})
-    }
-    
-})
-
-//5- to delete all items and make cart empty
-router.delete('/remove/:userId', async(req, resp)=>{
-    try{
-        let {userId} = req.params
-        let cart = await Cart.findOne({user:userId})
-        if(!cart){
-            return resp.status(404).json({ status:'fail', data:'Cart not found' });
-        }
-        cart.items = []
-        await cart.save()
-        resp.status(200).json({status:'success', data:cart})
-
-        }
-        catch(error){
-            resp.status(400).json({status:'error', data:error})
-        }
-    
 })
 
 module.exports = router

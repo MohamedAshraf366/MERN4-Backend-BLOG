@@ -2,24 +2,42 @@ const express = require('express')
 let app = express()
 let cors = require('cors')
 let path = require('path')
+const cookieParser = require('cookie-parser')
 const dotenv = require('dotenv').config()
 let port = process.env.PORT || 3000
 let connectDB = require('./config/connectionDB')
 connectDB()
+
+let allowedOrigin = [
+    'http://localhost:5173'
+]
+
+app.use(cors({
+    origin:function(origin, callback){
+        if(!origin || allowedOrigin.includes(origin)){
+            callback(null, true)
+        }
+        else{
+            callback(new Error("Not allowed by CORS"));
+        }
+    } ,
+    credentials:true
+}))
 app.use(express.json())
-app.use(cors())
+app.use(cookieParser())
 let user = require('./router/user')
+let book = require('./router/book')
 let category = require('./router/category')
-let menu = require('./router/menu')
 let cart = require('./router/cart')
 app.use('/user', user)
+app.use('/book', book)
 app.use('/category', category)
-app.use('/menu', menu)
 app.use('/cart', cart)
 
+
 app.use('/public', express.static('public'))// allow browser to show all data in public folder
-app.use('/uploads/category', express.static(path.join(__dirname, 'public/category')))
-app.use('/uploads/menu', express.static(path.join(__dirname, 'public/menu')))
+app.use('/uploads/book', express.static(path.join(__dirname, 'public/book')))
+// app.use('/uploads/menu', express.static(path.join(__dirname, 'public/menu')))
 
 
 app.listen(port, ()=>{

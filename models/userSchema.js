@@ -18,12 +18,16 @@ let UserSchema = new mongoose.Schema({
     password:{
         type:String,
         required:true,
+        validate(value){
+                var password = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])");
+                if(!password.test(value)){
+                    throw new Error('The password must contain at least one uppercase letter, one lowercase letter, one number, and one special character, and be at least 8 characters long.');
+                }
+            }
     },
     role:{
         type:String,
         default:'user'
     },
-})
-
-let User = mongoose.model('User', UserSchema)
-module.exports = User
+}, {timestamps:true})
+module.exports = mongoose.model('User', UserSchema)

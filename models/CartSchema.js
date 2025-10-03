@@ -1,26 +1,41 @@
 let mongoose = require('mongoose')
+
+let CartItemSchema = new mongoose.Schema({
+    book:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'Book',
+        required:true,
+    },
+    quantity:{
+        type:Number,
+        required:true,
+        min:1,
+        default:1
+    },
+    price:{
+        type:Number,
+        required:true,
+    }
+})
+
+
 let CartSchema = new mongoose.Schema({
     user:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:'User',
-        required:true
-    },
-    items:[ //make an array because each object handle the menu food and its count
-        {
-        menu:{ 
-        type:mongoose.Schema.Types.ObjectId,
-        ref:'Menu',
-        required:true,
-    },
-    qty:{
-        type:Number,
-        min:1,
-        required:true,
-        default:1,
-    }
-        }
-    ]
-       
-},{timestamps:true})
-let Cart = mongoose.model('Cart', CartSchema)
-module.exports = Cart
+            type:mongoose.Schema.Types.ObjectId,
+            ref:'User',
+            required:true,
+        },
+        items:[CartItemSchema],//to show all product by user
+        totalAmount:{
+            type:Number,
+            required:true,
+            default:0,
+        },
+        totalPrice:{
+            type:Number,
+            required:true,
+            default:0,
+        },
+})
+
+module.exports = mongoose.model('Cart', CartSchema)
