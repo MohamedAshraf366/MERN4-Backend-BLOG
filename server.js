@@ -23,20 +23,18 @@ app.use(cors({
     } ,
     credentials:true
 }))
+app.use(express.urlencoded({extended:true}))//for search
 app.use(express.json())
 app.use(cookieParser())
+let post = require('./router/post')
 let user = require('./router/user')
-let book = require('./router/book')
-let category = require('./router/category')
-let cart = require('./router/cart')
+app.use('/post', post)
 app.use('/user', user)
-app.use('/book', book)
-app.use('/category', category)
-app.use('/cart', cart)
+
 
 
 app.use('/public', express.static('public'))// allow browser to show all data in public folder
-app.use('/uploads/book', express.static(path.join(__dirname, 'public/book')))
+// app.use('/uploads/book', express.static(path.join(__dirname, 'public/book')))
 // app.use('/uploads/menu', express.static(path.join(__dirname, 'public/menu')))
 
 
