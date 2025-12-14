@@ -7,11 +7,11 @@ const dotenv = require('dotenv').config()
 let port = process.env.PORT || 3000
 let connectDB = require('./config/connectionDB')
 connectDB()
-
+app.use(express.json({ limit: '100mb' }))
+app.use(express.urlencoded({ limit: '100mb', extended: true }))
 let allowedOrigin = [
-    'http://localhost:5173'
+    'http://localhost:3000'
 ]
-
 app.use(cors({
     origin:function(origin, callback){
         if(!origin || allowedOrigin.includes(origin)){
@@ -23,21 +23,11 @@ app.use(cors({
     } ,
     credentials:true
 }))
-app.use(express.urlencoded({extended:true}))//for search
-app.use(express.json())
 app.use(cookieParser())
-let post = require('./router/post')
 let user = require('./router/user')
-app.use('/post', post)
+let post = require('./router/post')
 app.use('/user', user)
-
-
-
-app.use('/public', express.static('public'))// allow browser to show all data in public folder
-// app.use('/uploads/book', express.static(path.join(__dirname, 'public/book')))
-// app.use('/uploads/menu', express.static(path.join(__dirname, 'public/menu')))
-
-
+app.use('/post', post)
 app.listen(port, ()=>{
     console.log(`server is working on port ${port}`)
 })
