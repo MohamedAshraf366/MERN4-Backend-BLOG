@@ -10,8 +10,7 @@ connectDB()
 app.use(express.json({ limit: '100mb' }))
 app.use(express.urlencoded({ limit: '100mb', extended: true }))
 let allowedOrigin = [
-    'http://localhost:3000'
-]
+'http://localhost:5173', 'https://mern1-frontend-restaurant-77dj54cmw-moahmed-ashrafs-projects.vercel.app']
 app.use(cors({
     origin:function(origin, callback){
         if(!origin || allowedOrigin.includes(origin)){
