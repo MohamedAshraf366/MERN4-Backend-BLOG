@@ -9,7 +9,7 @@ let connectDB = require('./config/connectionDB')
 connectDB()
 
 let allowedOrigin = [
-    'http://localhost:5173'
+    'http://localhost:5173', 'https://mern1-frontend-restaurant-77dj54cmw-moahmed-ashrafs-projects.vercel.app'
 ]
 
 app.use(cors({
