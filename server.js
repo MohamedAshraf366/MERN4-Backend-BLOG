@@ -12,7 +12,9 @@ let allowedOrigin = [
     'http://localhost:5173', 'https://mern-4-frontend-blog-83r2.vercel.app'
 
   ]
-
+app.use('/public', express.static('public'))// allow browser to show all data in public folder
+app.use(express.urlencoded({extended:true}))//for search
+app.use(express.json())
 app.use(cors({
   origin: function (origin, callback) {
     console.log('Request origin:', origin)
@@ -26,8 +28,6 @@ app.use(cors({
   credentials: true
 }))
 
-app.use(express.urlencoded({extended:true}))//for search
-app.use(express.json())
 app.use(cookieParser())
 app.get('/', (req, res) => {
   res.send('API is working')
@@ -37,7 +37,7 @@ let user = require('./router/user')
 app.use('/post', post)
 app.use('/user', user)
 
-app.use('/public', express.static('public'))// allow browser to show all data in public folder
+
 
 app.listen(port, ()=>{
     console.log(`server is working on port ${port}`)
