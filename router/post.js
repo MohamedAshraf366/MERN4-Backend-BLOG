@@ -1,14 +1,20 @@
-const mongoose = require('mongoose')
-const Post = require('../models/postSocial')
-const express = require('express')
-const router = express.Router()
-const auth = require('./auth/middleware')
-//to write anew post
-router.post('/writePost', auth,async(req, resp)=>{
-    const{postContent, postImage} = req.body
-    const userId = req.user._id
-    if(!userId){
-        return resp.status(400).json({status:'fail', data:'user Not logged in'})
+let express = require('express')
+let router = express.Router()
+let Post = require('../models/PostSchema')
+let auth = require('./auth/middleware')
+router.get('/', (req, resp)=>{
+    resp.status(200).json({status:'success', data:' success'})
+})
+router.post('/addPost',auth() ,async(req, resp)=>{
+    try{
+        let {title, body} = req.body
+        if(!title || !body){
+            return resp.status(400).json({status:'fail', data:"Thanks to fill all required data"})
+        }
+
+        let post = new Post({title, body, createdBy:req.user.id})
+        await post.save()
+        resp.status(200).json({status:'success', data:post})
     }
     if(!postContent && !postImage){
         return resp.status(401).json({status:'fail', data:"Post can't be empty, thansk to enter text or image to post"})
