@@ -1,28 +1,28 @@
-let mongoose = require('mongoose')
-let bcryptjs = require('bcryptjs')
 let jwt = require('jsonwebtoken')
-let auth = (requiredRoll = null)=>{
-    return(req, resp, next)=>{
-        try{
-            let authHeader = req.headers['Authorization'] || req.headers['authorization']
-            if(!authHeader){
-                return resp.status(400).json({status:'fail',data:'Authorization header missing'})
-            }
-            let token = authHeader.split(' ')[1]
+let User = require('../../models/UserSocial')
+
+let auth = async(req, resp, next)=>{
+           try{
+            let token = req.cookies.jwtCookies
             if(!token){
-                return resp.status(400).json({status:'fail',data:'Token is missing'})
+                return resp.status(400).json({status:'fail', data:'User is not loggedin'})
             }
-            let decodedData = jwt.verify(token, process.env.SECRET_KEY)
-            req.user = decodedData
-            if(requiredRoll && decodedData.role.toLowerCase() !== requiredRoll.toLowerCase()){
-                return resp.status(403).json({status:'fail', data:'Access denied' })
+            // to redecode token
+            let decode = jwt.verify(token, process.env.SECRET_KEY)
+            if(!decode){
+                return resp.status(401).json({status:'fail', data:'Token not authorized'})
             }
+            let user = await User.findById(decode.id).select('-password')
+            if(!user){
+                return resp.status(404).json({status:'fail', data:'User not found'})
+            }
+            req.user = user
             next()
         }
         catch(error){
             resp.status(500).json({status:'error', data:error.message})
         }
     }
-}
+
 
 module.exports = auth
