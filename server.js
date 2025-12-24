@@ -7,8 +7,7 @@ const dotenv = require('dotenv').config()
 let port = process.env.PORT || 3000
 let connectDB = require('./config/connectionDB')
 connectDB()
-app.use(express.json({ limit: '100mb' }))
-app.use(express.urlencoded({ limit: '100mb', extended: true }))
+
 let allowedOrigin = [
     'http://localhost:5173', 'https://mern-4-frontend-blog-83r2.vercel.app'
 
@@ -30,10 +29,13 @@ app.use(cors({
 app.use(express.urlencoded({extended:true}))//for search
 app.use(express.json())
 app.use(cookieParser())
-let user = require('./router/user')
 let post = require('./router/post')
-app.use('/user', user)
+let user = require('./router/user')
 app.use('/post', post)
+app.use('/user', user)
+
+app.use('/public', express.static('public'))// allow browser to show all data in public folder
+
 app.listen(port, ()=>{
     console.log(`server is working on port ${port}`)
 })
