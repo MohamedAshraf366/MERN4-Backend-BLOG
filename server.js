@@ -32,12 +32,11 @@ app.use(cookieParser())
 app.get('/', (req, res) => {
   res.send('API is working')
 })
-let post = require('./router/post')
+
 let user = require('./router/user')
-app.use('/post', post)
+let post = require('./router/post')
 app.use('/user', user)
-
-
+app.use('/post', post)
 
 app.listen(port, ()=>{
     console.log(`server is working on port ${port}`)
