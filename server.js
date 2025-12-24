@@ -9,20 +9,23 @@ let connectDB = require('./config/connectionDB')
 connectDB()
 
 let allowedOrigin = [
-    'http://localhost:5173', 'https://mern1-frontend-restaurant-77dj54cmw-moahmed-ashrafs-projects.vercel.app'
-]
+    'http://localhost:5173', 'https://mern-4-frontend-blog-83r2.vercel.app'
+
+  ]
 
 app.use(cors({
-    origin:function(origin, callback){
-        if(!origin || allowedOrigin.includes(origin)){
-            callback(null, true)
-        }
-        else{
-            callback(new Error("Not allowed by CORS"));
-        }
-    } ,
-    credentials:true
+  origin: function (origin, callback) {
+    console.log('Request origin:', origin)
+
+    if (!origin || allowedOrigin.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  credentials: true
 }))
+
 app.use(express.urlencoded({extended:true}))//for search
 app.use(express.json())
 app.use(cookieParser())
