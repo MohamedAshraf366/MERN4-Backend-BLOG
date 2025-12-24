@@ -34,12 +34,7 @@ let user = require('./router/user')
 app.use('/post', post)
 app.use('/user', user)
 
-
-
 app.use('/public', express.static('public'))// allow browser to show all data in public folder
-// app.use('/uploads/book', express.static(path.join(__dirname, 'public/book')))
-// app.use('/uploads/menu', express.static(path.join(__dirname, 'public/menu')))
-
 
 app.listen(port, ()=>{
     console.log(`server is working on port ${port}`)
