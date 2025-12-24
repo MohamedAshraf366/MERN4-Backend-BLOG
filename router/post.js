@@ -2,6 +2,9 @@ let express = require('express')
 let router = express.Router()
 let Post = require('../models/PostSchema')
 let auth = require('./auth/middleware')
+router.get('/', (req, resp)=>{
+    resp.status(200).json({status:'success', data:' success'})
+})
 router.post('/addPost',auth() ,async(req, resp)=>{
     try{
         let {title, body} = req.body
