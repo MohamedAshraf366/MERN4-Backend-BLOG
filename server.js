@@ -29,6 +29,9 @@ app.use(cors({
 app.use(express.urlencoded({extended:true}))//for search
 app.use(express.json())
 app.use(cookieParser())
+app.get('/', (req, res) => {
+  res.send('API is working')
+})
 let post = require('./router/post')
 let user = require('./router/user')
 app.use('/post', post)
